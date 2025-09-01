@@ -33,31 +33,17 @@ function AuthenticatedTabs() {
         tabBarActiveTintColor: '#007AFF',
         tabBarInactiveTintColor: 'gray',
         headerShown: false,
-        tabBarStyle: {
-          paddingBottom: 5,
-          paddingTop: 5,
-          height: 60,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600',
-        },
       })}
     >
       <Tab.Screen 
         name="Home" 
         component={HomeScreen} 
-        options={{ 
-          tabBarLabel: 'Inicio',
-          tabBarBadge: null, // Para futuras notificaciones
-        }}
+        options={{ tabBarLabel: 'Inicio' }}
       />
       <Tab.Screen 
         name="EditProfile" 
         component={EditProfileScreen} 
-        options={{ 
-          tabBarLabel: 'Editar Perfil',
-        }}
+        options={{ tabBarLabel: 'Editar Perfil' }}
       />
     </Tab.Navigator>
   );
@@ -66,14 +52,6 @@ function AuthenticatedTabs() {
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [initializing, setInitializing] = useState(true);
-
-  // Función para manejar cambios de autenticación
-  const onAuthStateChange = (user) => {
-    console.log('Estado de autenticación cambió:', user ? 'Usuario logueado' : 'Usuario no logueado');
-    setUser(user);
-    if (initializing) setInitializing(false);
-  };
 
   useEffect(() => {
     // Mostrar splash screen por 2 segundos
@@ -82,54 +60,31 @@ export default function App() {
     }, 2000);
 
     // Listener para cambios de autenticación
-    const unsubscribe = onAuthStateChanged(auth, onAuthStateChange);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+    });
 
     return () => {
       clearTimeout(timer);
       unsubscribe();
     };
-  }, [initializing]);
+  }, []);
 
-  // Mostrar splash screen mientras se inicializa
-  if (isLoading || initializing) {
+  if (isLoading) {
     return <SplashScreen />;
   }
 
   return (
     <NavigationContainer>
-      <Stack.Navigator 
-        screenOptions={{ 
-          headerShown: false,
-          animation: 'slide_from_right', // Animación de transición
-        }}
-      >
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
-          // Usuario autenticado - Mostrar tabs principales
-          <Stack.Screen 
-            name="AuthenticatedApp" 
-            component={AuthenticatedTabs}
-            options={{
-              gestureEnabled: false, // Deshabilitar swipe back cuando está logueado
-            }}
-          />
+          // Usuario autenticado
+          <Stack.Screen name="AuthenticatedApp" component={AuthenticatedTabs} />
         ) : (
-          // Usuario no autenticado - Mostrar pantallas de auth
+          // Usuario no autenticado
           <>
-            <Stack.Screen 
-              name="Login" 
-              component={LoginScreen}
-              options={{
-                title: 'Iniciar Sesión'
-              }}
-            />
-            <Stack.Screen 
-              name="Register" 
-              component={RegisterScreen}
-              options={{
-                title: 'Crear Cuenta',
-                presentation: 'modal', // Presentar como modal en iOS
-              }}
-            />
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
           </>
         )}
       </Stack.Navigator>
