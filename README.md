@@ -29,3 +29,11 @@
   "react-native-safe-area-context": "5.4.0",
   "react-native-screens": "~4.11.1"
 }
+```
+
+## 📦 Dependencias Principales
+```json
+{
+https://drive.google.com/file/d/1yfAR9dQGG42p-HfZAP9jPXDbhTZmjGUC/view?usp=sharing
+}
+```
