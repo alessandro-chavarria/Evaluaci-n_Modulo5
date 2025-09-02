@@ -1,4 +1,4 @@
-## 👥 Desarrolladores
+## 👥 Estudiantes
 - **Enrique Alessandro Chavarría Cardoza** - #20230083
 - **Carlos Rodrigo Henriquez Buendía** - #20220482
 
@@ -31,6 +31,6 @@
 }
 ```
 
-## 📦 Dependencias Principales
+## Video
 - https://drive.google.com/file/d/1yfAR9dQGG42p-HfZAP9jPXDbhTZmjGUC/view?usp=sharing
 
