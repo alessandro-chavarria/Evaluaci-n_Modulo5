@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { updatePassword, updateProfile } from 'firebase/auth';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 
-const RegisterScreen = ({ navigation }) => {
+const EditProfileScreen = ({ navigation }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -12,46 +12,63 @@ const RegisterScreen = ({ navigation }) => {
   const [specialty, setSpecialty] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleRegister = async () => {
-    if (!name || !email || !password || !age || !specialty) {
-      Alert.alert('Error', 'Por favor, completa todos los campos');
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setName(user.displayName || userData.name || '');
+            setEmail(user.email || '');
+            setAge(userData.age ? userData.age.toString() : '');
+            setSpecialty(userData.specialty || '');
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  const handleSave = async () => {
+    if (!name) {
+      Alert.alert('Error', 'El nombre es obligatorio');
       return;
     }
 
     setLoading(true);
     try {
-      // Crear usuario en Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      // Actualizar perfil con el nombre
+      const user = auth.currentUser;
+      
+      // Actualizar perfil en Firebase Auth
       await updateProfile(user, {
         displayName: name
       });
 
-      // Guardar información adicional en Firestore
-      await setDoc(doc(db, 'users', user.uid), {
+      // Actualizar información adicional en Firestore
+      await updateDoc(doc(db, 'users', user.uid), {
         name,
-        email,
         age: parseInt(age),
-        specialty,
-        createdAt: new Date()
+        specialty
       });
 
-      Alert.alert('Éxito', 'Usuario registrado correctamente');
-      navigation.navigate('Home');
+      // Actualizar contraseña si se proporcionó una nueva
+      if (password) {
+        await updatePassword(user, password);
+      }
+
+      Alert.alert('Éxito', 'Perfil actualizado correctamente');
+      navigation.goBack();
     } catch (error) {
-      let errorMessage = 'Error al registrar usuario';
+      let errorMessage = 'Error al actualizar perfil';
       
       switch (error.code) {
-        case 'auth/email-already-in-use':
-          errorMessage = 'El email ya está en uso';
-          break;
-        case 'auth/invalid-email':
-          errorMessage = 'El formato del email es inválido';
-          break;
-        case 'auth/weak-password':
-          errorMessage = 'La contraseña es demasiado débil';
+        case 'auth/requires-recent-login':
+          errorMessage = 'Para cambiar la contraseña, debes iniciar sesión nuevamente';
           break;
         default:
           errorMessage = error.message;
@@ -65,7 +82,7 @@ const RegisterScreen = ({ navigation }) => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Crear Cuenta</Text>
+      <Text style={styles.title}>Editar Perfil</Text>
       
       <TextInput
         style={styles.input}
@@ -80,12 +97,12 @@ const RegisterScreen = ({ navigation }) => {
         keyboardType="email-address"
         autoCapitalize="none"
         value={email}
-        onChangeText={setEmail}
+        editable={false} // El email no se puede editar
       />
       
       <TextInput
         style={styles.input}
-        placeholder="Contraseña"
+        placeholder="Nueva contraseña (dejar vacío para no cambiar)"
         secureTextEntry
         value={password}
         onChangeText={setPassword}
@@ -110,15 +127,18 @@ const RegisterScreen = ({ navigation }) => {
         <ActivityIndicator size="large" color="#28a745" />
       ) : (
         <TouchableOpacity 
-          style={styles.registerButton}
-          onPress={handleRegister}
+          style={styles.saveButton}
+          onPress={handleSave}
         >
-          <Text style={styles.buttonText}>Registrarse</Text>
+          <Text style={styles.buttonText}>Guardar Cambios</Text>
         </TouchableOpacity>
       )}
       
-      <TouchableOpacity onPress={() => navigation.goBack()}>
-        <Text style={styles.loginText}>¿Ya tienes cuenta? Inicia sesión</Text>
+      <TouchableOpacity 
+        style={styles.cancelButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={styles.cancelButtonText}>Cancelar</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -127,7 +147,6 @@ const RegisterScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    justifyContent: 'center',
     padding: 20,
     backgroundColor: '#fff',
   },
@@ -145,22 +164,30 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     paddingHorizontal: 10,
   },
-  registerButton: {
+  saveButton: {
     backgroundColor: '#28a745',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
     marginBottom: 15,
   },
+  cancelButton: {
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#dc3545',
+  },
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
   },
-  loginText: {
-    color: '#007bff',
-    textAlign: 'center',
+  cancelButtonText: {
+    color: '#dc3545',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 
-export default RegisterScreen;
+export default EditProfileScreen;

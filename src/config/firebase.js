@@ -1,56 +1,25 @@
-import { initializeApp } from "firebase/app";
+// Import the functions you need from the SDKs you need
+import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from 'firebase/storage';
+import { getFirestore } from 'firebase/firestore';
 
-// Configuración temporal de Firebase (reemplaza con tu configuración real)
-const firebaseConfig = {
-  apiKey: "AIzaSyDummy-Replace-With-Your-Real-Config",
-  authDomain: "your-project.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef123456789"
+// Your web app's Firebase configuration
+export const firebaseConfig = {
+  apiKey: "AIzaSyCk1Jn3LFYboe7MIuOtjtpwcK-e-WI4AbY",
+  authDomain: "modulo5-e35d6.firebaseapp.com",
+  projectId: "modulo5-e35d6",
+  storageBucket: "modulo5-e35d6.firebasestorage.app",
+  messagingSenderId: "740621882355",
+  appId: "1:740621882355:web:e133f7ca7c47426e17f886"
 };
 
-// Si quieres usar variables de entorno, descomenta esto:
-/*
-import { 
-  API_KEY, 
-  AUTH_DOMAIN, 
-  PROJECT_ID, 
-  STORAGE_BUCKET, 
-  MESSAGING_SENDER_ID, 
-  APP_ID 
-} from '@env';
-
-const firebaseConfig = {
-  apiKey: API_KEY,
-  authDomain: AUTH_DOMAIN,
-  projectId: PROJECT_ID,
-  storageBucket: STORAGE_BUCKET,
-  messagingSenderId: MESSAGING_SENDER_ID,
-  appId: APP_ID
-};
-*/
-
-console.log("Configuración de Firebase cargada:", {
-  projectId: firebaseConfig.projectId,
-  authDomain: firebaseConfig.authDomain,
-  configured: !!firebaseConfig.apiKey
-});
-
-// Inicializar Firebase
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-console.log('Firebase inicializado correctamente');
 
-// Inicializar servicios
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
+// Initialize Firebase Authentication and get a reference to the service
+export const auth = getAuth(app);
 
-console.log('Todos los servicios de Firebase inicializados');
+// Initialize Cloud Firestore and get a reference to the service
+export const db = getFirestore(app);
 
-// Exportar servicios
-export { auth, db, storage };
 export default app;

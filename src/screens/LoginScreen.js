@@ -1,93 +1,126 @@
-import React, { useState, useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './config/firebase';
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../config/firebase';
 
-// Importar pantallas
-import SplashScreen from './screens/SplashScreen';
-import LoginScreen from './screens/LoginScreen';
-import RegisterScreen from './screens/RegisterScreen';
-import HomeScreen from './screens/HomeScreen';
-import EditProfileScreen from './screens/EditProfileScreen';
+const LoginScreen = ({ navigation }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Por favor, completa todos los campos');
+      return;
+    }
 
-// Navegación para usuarios autenticados
-function AuthenticatedTabs() {
-  return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName;
-          if (route.name === 'Home') {
-            iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'EditProfile') {
-            iconName = focused ? 'person' : 'person-outline';
-          }
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: '#007AFF',
-        tabBarInactiveTintColor: 'gray',
-        headerShown: false,
-      })}
-    >
-      <Tab.Screen 
-        name="Home" 
-        component={HomeScreen} 
-        options={{ tabBarLabel: 'Inicio' }}
-      />
-      <Tab.Screen 
-        name="EditProfile" 
-        component={EditProfileScreen} 
-        options={{ tabBarLabel: 'Editar Perfil' }}
-      />
-    </Tab.Navigator>
-  );
-}
-
-export default function App() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    // Mostrar splash screen por 2 segundos
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
-
-    // Listener para cambios de autenticación
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-    });
-
-    return () => {
-      clearTimeout(timer);
-      unsubscribe();
-    };
-  }, []);
-
-  if (isLoading) {
-    return <SplashScreen />;
-  }
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // Navegar a HomeScreen después de login exitoso
+      navigation.navigate('Home');
+    } catch (error) {
+      let errorMessage = 'Error al iniciar sesión';
+      
+      switch (error.code) {
+        case 'auth/invalid-email':
+          errorMessage = 'El formato del email es inválido';
+          break;
+        case 'auth/user-disabled':
+          errorMessage = 'Usuario deshabilitado';
+          break;
+        case 'auth/user-not-found':
+          errorMessage = 'Usuario no encontrado';
+          break;
+        case 'auth/wrong-password':
+          errorMessage = 'Contraseña incorrecta';
+          break;
+        default:
+          errorMessage = error.message;
+      }
+      
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {user ? (
-          // Usuario autenticado
-          <Stack.Screen name="AuthenticatedApp" component={AuthenticatedTabs} />
-        ) : (
-          // Usuario no autenticado
-          <>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-          </>
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <View style={styles.container}>
+      <Text style={styles.title}>Iniciar Sesión</Text>
+      
+      <TextInput
+        style={styles.input}
+        placeholder="Correo electrónico"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        value={email}
+        onChangeText={setEmail}
+      />
+      
+      <TextInput
+        style={styles.input}
+        placeholder="Contraseña"
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+      />
+      
+      {loading ? (
+        <ActivityIndicator size="large" color="#007bff" />
+      ) : (
+        <TouchableOpacity 
+          style={styles.loginButton}
+          onPress={handleLogin}
+        >
+          <Text style={styles.buttonText}>Iniciar Sesión</Text>
+        </TouchableOpacity>
+      )}
+      
+      <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+        <Text style={styles.registerText}>¿No tienes cuenta? Regístrate aquí</Text>
+      </TouchableOpacity>
+    </View>
   );
-}
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  input: {
+    height: 50,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 8,
+    marginBottom: 15,
+    paddingHorizontal: 10,
+  },
+  loginButton: {
+    backgroundColor: '#007bff',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  registerText: {
+    color: '#007bff',
+    textAlign: 'center',
+  },
+});
+
+export default LoginScreen;

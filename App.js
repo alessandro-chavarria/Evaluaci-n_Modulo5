@@ -1,138 +1,50 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
+import AppNavigator from './src/navigation/AppNavigator';
+import { auth, db } from './src/config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './config/firebase';
-
-// Importar pantallas
-import SplashScreen from './screens/SplashScreen';
-import LoginScreen from './screens/LoginScreen';
-import RegisterScreen from './screens/RegisterScreen';
-import HomeScreen from './screens/HomeScreen';
-import EditProfileScreen from './screens/EditProfileScreen';
-
-const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
-
-// Navegación para usuarios autenticados
-function AuthenticatedTabs() {
-  return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName;
-          if (route.name === 'Home') {
-            iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'EditProfile') {
-            iconName = focused ? 'person' : 'person-outline';
-          }
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: '#007AFF',
-        tabBarInactiveTintColor: 'gray',
-        headerShown: false,
-        tabBarStyle: {
-          paddingBottom: 5,
-          paddingTop: 5,
-          height: 60,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600',
-        },
-      })}
-    >
-      <Tab.Screen 
-        name="Home" 
-        component={HomeScreen} 
-        options={{ 
-          tabBarLabel: 'Inicio',
-          tabBarBadge: null, // Para futuras notificaciones
-        }}
-      />
-      <Tab.Screen 
-        name="EditProfile" 
-        component={EditProfileScreen} 
-        options={{ 
-          tabBarLabel: 'Editar Perfil',
-        }}
-      />
-    </Tab.Navigator>
-  );
-}
+import { doc, getDoc } from 'firebase/firestore';
+import { ActivityIndicator, View } from 'react-native';
 
 export default function App() {
-  const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [initializing, setInitializing] = useState(true);
-
-  // Función para manejar cambios de autenticación
-  const onAuthStateChange = (user) => {
-    console.log('Estado de autenticación cambió:', user ? 'Usuario logueado' : 'Usuario no logueado');
-    setUser(user);
-    if (initializing) setInitializing(false);
-  };
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Mostrar splash screen por 2 segundos
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // Si el usuario está autenticado, obtener datos adicionales de Firestore
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            setUser({ ...user, ...userDoc.data() });
+          } else {
+            setUser(user);
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          setUser(user);
+        }
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
 
-    // Listener para cambios de autenticación
-    const unsubscribe = onAuthStateChanged(auth, onAuthStateChange);
+    return () => unsubscribe();
+  }, []);
 
-    return () => {
-      clearTimeout(timer);
-      unsubscribe();
-    };
-  }, [initializing]);
-
-  // Mostrar splash screen mientras se inicializa
-  if (isLoading || initializing) {
-    return <SplashScreen />;
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#007bff" />
+      </View>
+    );
   }
 
   return (
     <NavigationContainer>
-      <Stack.Navigator 
-        screenOptions={{ 
-          headerShown: false,
-          animation: 'slide_from_right', // Animación de transición
-        }}
-      >
-        {user ? (
-          // Usuario autenticado - Mostrar tabs principales
-          <Stack.Screen 
-            name="AuthenticatedApp" 
-            component={AuthenticatedTabs}
-            options={{
-              gestureEnabled: false, // Deshabilitar swipe back cuando está logueado
-            }}
-          />
-        ) : (
-          // Usuario no autenticado - Mostrar pantallas de auth
-          <>
-            <Stack.Screen 
-              name="Login" 
-              component={LoginScreen}
-              options={{
-                title: 'Iniciar Sesión'
-              }}
-            />
-            <Stack.Screen 
-              name="Register" 
-              component={RegisterScreen}
-              options={{
-                title: 'Crear Cuenta',
-                presentation: 'modal', // Presentar como modal en iOS
-              }}
-            />
-          </>
-        )}
-      </Stack.Navigator>
+      <AppNavigator />
     </NavigationContainer>
   );
 }

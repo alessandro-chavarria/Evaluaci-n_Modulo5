@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "practica-firebase",
-    "slug": "practica-firebase",
+    "name": "fortn",
+    "slug": "fortn",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,11 +13,9 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.tuusuario.practicafirebase"
+      "supportsTablet": true
     },
     "android": {
-      "package": "com.tuusuario.practicafirebase",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
