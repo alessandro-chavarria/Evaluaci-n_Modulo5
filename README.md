@@ -32,8 +32,5 @@
 ```
 
 ## 📦 Dependencias Principales
-```json
-{
-https://drive.google.com/file/d/1yfAR9dQGG42p-HfZAP9jPXDbhTZmjGUC/view?usp=sharing
-}
-```
+- https://drive.google.com/file/d/1yfAR9dQGG42p-HfZAP9jPXDbhTZmjGUC/view?usp=sharing
+
